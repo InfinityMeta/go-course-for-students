@@ -28,13 +28,13 @@ func New() TagCloud {
 // AddTag should add a tag to the cloud if it wasn't present and increase tag occurrence count
 // thread-safety is not needed
 // TODO: You decide whether receiver should be a pointer or a value
-func (tc *TagCloud) AddTag(tag string) {
-	if tc.existedTags[tag] {
-		for idx, tg := range tc.tags {
+func (tcloud *TagCloud) AddTag(tag string) {
+	if tcloud.existedTags[tag] {
+		for idx, tg := range tcloud.tags {
 			if tg.Tag == tag {
-				tc.tags[idx].OccurrenceCount++
-				sort.Slice(tc.tags, func(i, j int) bool {
-					return tc.tags[i].OccurrenceCount > tc.tags[j].OccurrenceCount
+				tcloud.tags[idx].OccurrenceCount++
+				sort.Slice(tcloud.tags, func(i, j int) bool {
+					return tcloud.tags[i].OccurrenceCount > tcloud.tags[j].OccurrenceCount
 				})
 			}
 		}
@@ -43,8 +43,8 @@ func (tc *TagCloud) AddTag(tag string) {
 			Tag:             tag,
 			OccurrenceCount: 1,
 		}
-		tc.tags = append(tc.tags, newTag)
-		tc.existedTags[tag] = true
+		tcloud.tags = append(tcloud.tags, newTag)
+		tcloud.existedTags[tag] = true
 	}
 	// TODO: Implement this
 }
@@ -55,11 +55,11 @@ func (tc *TagCloud) AddTag(tag string) {
 // thread-safety is not needed
 // there are no restrictions on time complexity
 // TODO: You decide whether receiver should be a pointer or a value
-func (tc *TagCloud) TopN(n int) []TagStat {
+func (tcloud *TagCloud) TopN(n int) []TagStat {
 	// TODO: Implement this
-	if n > len(tc.tags) {
-		return tc.tags
+	if n > len(tcloud.tags) {
+		return tcloud.tags
 	} else {
-		return tc.tags[:n]
+		return tcloud.tags[:n]
 	}
 }
