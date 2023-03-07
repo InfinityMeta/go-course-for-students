@@ -30,9 +30,9 @@ func New() TagCloud {
 // TODO: You decide whether receiver should be a pointer or a value
 func (tc *TagCloud) AddTag(tag string) {
 	if tc.existedTags[tag] {
-		for _, tg := range tc.tags {
+		for idx, tg := range tc.tags {
 			if tg.Tag == tag {
-				tg.OccurrenceCount++
+				tc.tags[idx].OccurrenceCount++
 				sort.Slice(tc.tags, func(i, j int) bool {
 					return tc.tags[i].OccurrenceCount > tc.tags[j].OccurrenceCount
 				})
