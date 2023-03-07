@@ -57,5 +57,9 @@ func (tc *TagCloud) AddTag(tag string) {
 // TODO: You decide whether receiver should be a pointer or a value
 func (tc *TagCloud) TopN(n int) []TagStat {
 	// TODO: Implement this
-	return tc.tags[:n]
+	if n > len(tc.tags) {
+		return tc.tags
+	} else {
+		return tc.tags[:n]
+	}
 }
