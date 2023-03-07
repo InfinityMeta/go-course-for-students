@@ -55,7 +55,6 @@ func (tcloud *TagCloud) AddTag(tag string) {
 // thread-safety is not needed
 // there are no restrictions on time complexity
 // TODO: You decide whether receiver should be a pointer or a value
-
 func (tcloud *TagCloud) TopN(n int) []TagStat {
 	// TODO: Implement this
 	if n > len(tcloud.tags) {
