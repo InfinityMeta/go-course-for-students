@@ -11,11 +11,12 @@ import (
 )
 
 type Options struct {
-	From   string
-	To     string
-	Offset int64
-	Limit  int64
-	Conv   string
+	From      string
+	To        string
+	Offset    int64
+	Limit     int64
+	BlockSize int64
+	Conv      string
 	// todo: add required flags
 }
 
@@ -164,6 +165,7 @@ func ParseFlags() (*Options, error) {
 	flag.StringVar(&opts.To, "to", "", "file to write. by default - stdout")
 	flag.Int64Var(&opts.Offset, "offset", 0, "number of bytes in input to skip. by default - 0")
 	flag.Int64Var(&opts.Limit, "limit", -1, "maximum of bytes to read. by default - size of file")
+	flag.Int64Var(&opts.BlockSize, "block_size", -1, "size of block for process. by default - all available memory")
 	flag.StringVar(&opts.Conv, "conv", "", "convertions applying to text. by default - none")
 
 	// todo: parse and validate all flags
