@@ -33,5 +33,46 @@ func NewSizer() DirSizer {
 
 func (a *sizer) Size(ctx context.Context, d Dir) (Result, error) {
 	// TODO: implement this
-	return Result{}, nil
+
+	var (
+		totalSize  int64 = 0
+		totalCount int64 = 0
+		curDir     Dir
+	)
+
+	queue := make([]Dir, 0)
+
+	queue = append(queue, d)
+
+	for len(queue) > 0 {
+
+		curDir = queue[0]
+
+		queue = queue[1:]
+
+		dirs, files, err := curDir.Ls(ctx)
+
+		if err != nil {
+			return Result{}, err
+		}
+
+		queue = append(queue, dirs...)
+
+		for _, file := range files {
+
+			fileSize, err := file.Stat(ctx)
+
+			if err != nil {
+				return Result{}, err
+			}
+
+			totalSize += fileSize
+
+			totalCount += 1
+
+		}
+
+	}
+
+	return Result{Size: totalSize, Count: totalCount}, nil
 }
