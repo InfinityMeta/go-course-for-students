@@ -217,6 +217,123 @@ func TestValidate(t *testing.T) {
 				return true
 			},
 		},
+		{
+			name: "valid struct with slices",
+			args: args{
+				v: struct {
+					MinInt []int    `validate:"min:1"`
+					MaxInt []int    `validate:"max:10"`
+					MinStr []string `validate:"min:3"`
+					MaxStr []string `validate:"max:5"`
+					InInt  []int    `validate:"in:1,2,3,4,5,6,7,8"`
+					InStr  []string `validate:"in:ab,cd,ef,gn,hm"`
+					Len    []string `validate:"len:4"`
+				}{
+					MinInt: []int{1, 2, 3, 4, 5},
+					MaxInt: []int{6, 7, 8, 9, 10},
+					MinStr: []string{"abc", "cdef", "words"},
+					MaxStr: []string{"a", "cde", "weqwq"},
+					InInt:  []int{2, 4, 6},
+					InStr:  []string{"ab", "cd", "hm"},
+					Len:    []string{"abcd", "efdg", "gfdg"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "wrong max slice",
+			args: args{
+				v: struct {
+					MaxSliceA []int    `validate:"max:10"`
+					MaxSliceB []int    `validate:"max:7-"`
+					MaxSliceC []int    `validate:"max:"`
+					MaxSliceD []string `validate:"max:5"`
+					MaxSliceE []string `validate:"max:-2"`
+					MaxSliceF []string `validate:"max:"`
+				}{
+					MaxSliceA: []int{5, 10, 15},
+					MaxSliceB: []int{1, 2, 3},
+					MaxSliceC: []int{4, 8},
+					MaxSliceD: []string{"abc", "dfehtj"},
+					MaxSliceE: []string{"rew", "tyu"},
+					MaxSliceF: []string{"as", "gd", "ty"},
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 6)
+				return true
+			},
+		},
+		{
+			name: "wrong min slice",
+			args: args{
+				v: struct {
+					MinSliceA []int    `validate:"min:5"`
+					MinSliceB []int    `validate:"min:7-"`
+					MinSliceC []int    `validate:"min:"`
+					MinSliceD []string `validate:"min:3"`
+					MinSliceE []string `validate:"min:"`
+				}{
+					MinSliceA: []int{1, 10, 15},
+					MinSliceB: []int{1, 2, 3},
+					MinSliceC: []int{4, 8},
+					MinSliceD: []string{"ab", "dfehtj"},
+					MinSliceE: []string{"rew", "tyu"},
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 5)
+				return true
+			},
+		},
+		{
+			name: "wrong length slice",
+			args: args{
+				v: struct {
+					Lower    []string `validate:"len:5"`
+					Higher   []string `validate:"len:5"`
+					Zero     []string `validate:"len:3"`
+					BadSpec  []string `validate:"len:%12"`
+					Negative []string `validate:"len:-6"`
+				}{
+					Lower:    []string{"abc", "gfdsd", "dadad"},
+					Higher:   []string{"asdasdfaf", "fsdsd", "weree"},
+					Zero:     []string{"", ""},
+					BadSpec:  []string{"asf", "sdg", "wqe"},
+					Negative: []string{"fd", "re"},
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 5)
+				return true
+			},
+		},
+		{
+			name: "wrong in slice",
+			args: args{
+				v: struct {
+					InSliceA     []string `validate:"in:ab,cd"`
+					InSliceB     []string `validate:"in:aa,bb,cd,ee"`
+					InSliceC     []int    `validate:"in:-1,-3,5,7"`
+					InSliceD     []int    `validate:"in:5-"`
+					InSliceEmpty []string `validate:"in:"`
+				}{
+					InSliceA:     []string{"ab", "ef"},
+					InSliceB:     []string{"ab", "bc"},
+					InSliceC:     []int{2, 4},
+					InSliceD:     []int{3, 5, 7},
+					InSliceEmpty: []string{""},
+				},
+			},
+			wantErr: true,
+			checkErr: func(err error) bool {
+				assert.Len(t, err.(ValidationErrors), 5)
+				return true
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
