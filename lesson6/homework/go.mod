@@ -3,7 +3,6 @@ module homework6
 go 1.19
 
 require (
-	github.com/InfinityMeta/validator v0.1.1
 	github.com/gofiber/fiber/v2 v2.43.0
 )
 
