@@ -5,6 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"github.com/InfinityMeta/validator"
+
 	"homework6/internal/app"
 )
 
@@ -20,12 +22,21 @@ func createAd(a app.App) fiber.Handler {
 
 		//TODO: вызов логики, например, CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
+		ad, err := a.CreateAd(c.Context(), reqBody.Title, reqBody.Text, reqBody.UserID)
 
 		if err != nil {
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(AdErrorResponse(err))
 		}
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+
+		err = validator.Validate(ad)
+
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(AdErrorResponse(err))
+		}
+
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }
 
@@ -39,6 +50,7 @@ func changeAdStatus(a app.App) fiber.Handler {
 		}
 
 		adID, err := c.ParamsInt("ad_id")
+
 		if err != nil {
 			c.Status(http.StatusBadRequest)
 			return c.JSON(AdErrorResponse(err))
@@ -47,12 +59,18 @@ func changeAdStatus(a app.App) fiber.Handler {
 		// TODO: вызов логики ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
 		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
 
+		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
+
 		if err != nil {
+			if err.Error() == "status forbidden" {
+				c.Status(http.StatusForbidden)
+				return c.JSON(AdErrorResponse(err))
+			}
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }
 
@@ -73,12 +91,24 @@ func updateAd(a app.App) fiber.Handler {
 
 		// TODO: вызов логики, например, UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 		// TODO: метод должен возвращать AdSuccessResponse или ошибку.
+		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 
 		if err != nil {
+			if err.Error() == "status forbidden" {
+				c.Status(http.StatusForbidden)
+				return c.JSON(AdErrorResponse(err))
+			}
 			c.Status(http.StatusInternalServerError)
 			return c.JSON(AdErrorResponse(err))
 		}
 
-		return c.JSON(AdSuccessResponse( /* объект ad */ ))
+		err = validator.Validate(ad)
+
+		if err != nil {
+			c.Status(http.StatusBadRequest)
+			return c.JSON(AdErrorResponse(err))
+		}
+
+		return c.JSON(AdSuccessResponse(ad))
 	}
 }
