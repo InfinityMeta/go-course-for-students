@@ -53,17 +53,9 @@ func (rs *RepositoryApp) Len(ctx context.Context) int64 {
 	return int64(len(rs.storage))
 }
 
-func (rs *RepositoryApp) UpdateADByID(ctx context.Context, userID int64, title string, text string) error {
+func (rs *RepositoryApp) UpdateADByID(ctx context.Context, adID int64, title string, text string) {
 
-	ad, err := rs.GetAdByID(ctx, userID)
-
-	if err != nil {
-		return err
-	}
-
-	ad.Title = title
-	ad.Text = text
-
-	return nil
+	rs.storage[adID].Title = title
+	rs.storage[adID].Text = text
 
 }
