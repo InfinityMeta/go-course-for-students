@@ -20,7 +20,7 @@ type Repository interface {
 	// TODO: реализовать
 	StoreAd(context.Context, *ads.Ad) error
 	GetAdByID(context.Context, int64) (*ads.Ad, error)
-	UpdateADByID(context.Context, int64, string, string) error
+	UpdateADByID(context.Context, int64, string, string)
 	Len(context.Context) int64
 }
 
@@ -78,11 +78,7 @@ func (a *AdApp) UpdateAd(ctx context.Context, adID int64, userID int64, title st
 		return &ads.Ad{}, err
 	}
 
-	err = a.repository.UpdateADByID(ctx, adID, title, text)
-
-	if err != nil {
-		return &ads.Ad{}, err
-	}
+	a.repository.UpdateADByID(ctx, adID, title, text)
 
 	return ad, nil
 
