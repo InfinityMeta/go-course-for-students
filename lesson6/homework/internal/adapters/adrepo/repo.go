@@ -8,16 +8,16 @@ import (
 	"homework6/internal/app"
 )
 
-type RepositoryMap struct {
+type RepositoryApp struct {
 	storage map[int64]*ads.Ad
 }
 
 func New() app.Repository {
 	storage := make(map[int64]*ads.Ad)
-	return &RepositoryMap{storage: storage}
+	return &RepositoryApp{storage: storage}
 }
 
-func (rs *RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error) {
+func (rs *RepositoryApp) GetAdByID(ctx context.Context, id int64) (*ads.Ad, error) {
 
 	var err error
 
@@ -32,7 +32,7 @@ func (rs *RepositoryMap) GetAdByID(ctx context.Context, id int64) (*ads.Ad, erro
 
 }
 
-func (rs *RepositoryMap) StoreAd(ctx context.Context, ad *ads.Ad) error {
+func (rs *RepositoryApp) StoreAd(ctx context.Context, ad *ads.Ad) error {
 
 	var err error
 
@@ -44,6 +44,25 @@ func (rs *RepositoryMap) StoreAd(ctx context.Context, ad *ads.Ad) error {
 	}
 
 	rs.storage[ad.ID] = ad
+
+	return nil
+
+}
+
+func (rs *RepositoryApp) Len(ctx context.Context) int64 {
+	return int64(len(rs.storage))
+}
+
+func (rs *RepositoryApp) UpdateADByID(ctx context.Context, userID int64, title string, text string) error {
+
+	ad, err := rs.GetAdByID(ctx, userID)
+
+	if err != nil {
+		return err
+	}
+
+	ad.Title = title
+	ad.Text = text
 
 	return nil
 

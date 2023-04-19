@@ -7,6 +7,8 @@ import (
 	"homework6/internal/ads"
 )
 
+var ErrStatusForbidden = errors.New("status forbidden")
+
 type App interface {
 	// TODO: реализовать
 	CreateAd(context.Context, string, string, int64) (*ads.Ad, error)
@@ -18,11 +20,12 @@ type Repository interface {
 	// TODO: реализовать
 	StoreAd(context.Context, *ads.Ad) error
 	GetAdByID(context.Context, int64) (*ads.Ad, error)
+	UpdateADByID(context.Context, int64, string, string) error
+	Len(context.Context) int64
 }
 
 type AdApp struct {
 	repository Repository
-	adCount    int64
 }
 
 func NewApp(repo Repository) App {
@@ -31,8 +34,7 @@ func NewApp(repo Repository) App {
 
 func (a *AdApp) CreateAd(ctx context.Context, title string, text string, authorId int64) (*ads.Ad, error) {
 
-	ad := &ads.Ad{ID: a.adCount, Title: title, Text: text, AuthorID: authorId, Published: false}
-	a.adCount++
+	ad := &ads.Ad{ID: a.repository.Len(ctx), Title: title, Text: text, AuthorID: authorId, Published: false}
 
 	err := a.repository.StoreAd(ctx, ad)
 
@@ -53,7 +55,7 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, adId int64, authorId int64, 
 	}
 
 	if ad.AuthorID != authorId {
-		err = errors.New("status forbidden")
+		err = ErrStatusForbidden
 		return &ads.Ad{}, err
 	}
 
@@ -63,21 +65,24 @@ func (a *AdApp) ChangeAdStatus(ctx context.Context, adId int64, authorId int64, 
 
 }
 
-func (a *AdApp) UpdateAd(ctx context.Context, adId int64, userId int64, title string, text string) (*ads.Ad, error) {
+func (a *AdApp) UpdateAd(ctx context.Context, adID int64, userID int64, title string, text string) (*ads.Ad, error) {
 
-	ad, err := a.repository.GetAdByID(ctx, adId)
+	ad, err := a.repository.GetAdByID(ctx, adID)
 
 	if err != nil {
 		return &ads.Ad{}, err
 	}
 
-	if ad.AuthorID != userId {
-		err = errors.New("status forbidden")
+	if ad.AuthorID != userID {
+		err = ErrStatusForbidden
 		return &ads.Ad{}, err
 	}
 
-	ad.Title = title
-	ad.Text = text
+	err = a.repository.UpdateADByID(ctx, adID, title, text)
+
+	if err != nil {
+		return &ads.Ad{}, err
+	}
 
 	return ad, nil
 
