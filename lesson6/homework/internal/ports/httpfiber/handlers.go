@@ -1,6 +1,7 @@
 package httpfiber
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gofiber/fiber/v2"
@@ -62,7 +63,7 @@ func changeAdStatus(a app.App) fiber.Handler {
 		ad, err := a.ChangeAdStatus(c.Context(), int64(adID), reqBody.UserID, reqBody.Published)
 
 		if err != nil {
-			if err.Error() == "status forbidden" {
+			if errors.Is(err, app.ErrStatusForbidden) {
 				c.Status(http.StatusForbidden)
 				return c.JSON(AdErrorResponse(err))
 			}
@@ -94,7 +95,7 @@ func updateAd(a app.App) fiber.Handler {
 		ad, err := a.UpdateAd(c.Context(), int64(adID), reqBody.UserID, reqBody.Title, reqBody.Text)
 
 		if err != nil {
-			if err.Error() == "status forbidden" {
+			if errors.Is(err, app.ErrStatusForbidden) {
 				c.Status(http.StatusForbidden)
 				return c.JSON(AdErrorResponse(err))
 			}
