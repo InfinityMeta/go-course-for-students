@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"homework8/internal/adapters/adrepo"
 	"homework8/internal/app"
@@ -14,11 +15,13 @@ import (
 )
 
 type adData struct {
-	ID        int64  `json:"id"`
-	Title     string `json:"title"`
-	Text      string `json:"text"`
-	AuthorID  int64  `json:"author_id"`
-	Published bool   `json:"published"`
+	ID           int64     `json:"id"`
+	Title        string    `json:"title"`
+	Text         string    `json:"text"`
+	AuthorID     int64     `json:"author_id"`
+	Published    bool      `json:"published"`
+	CreationDate time.Time `json:"creation_date"`
+	UpdateDate   time.Time `json:"update_date"`
 }
 
 type adResponse struct {
@@ -29,9 +32,20 @@ type adsResponse struct {
 	Data []adData `json:"data"`
 }
 
+type userData struct {
+	ID       int64  `json:"id"`
+	Nickname string `json:"nickname"`
+	Email    string `json:"email"`
+}
+
+type userResponse struct {
+	Data userData `json:"data"`
+}
+
 var (
 	ErrBadRequest = fmt.Errorf("bad request")
 	ErrForbidden  = fmt.Errorf("forbidden")
+	ErrNotFound   = fmt.Errorf("not found")
 )
 
 type testClient struct {
@@ -56,11 +70,15 @@ func (tc *testClient) getResponse(req *http.Request, out any) error {
 	}
 
 	if resp.StatusCode != http.StatusOK {
+
 		if resp.StatusCode == http.StatusBadRequest {
 			return ErrBadRequest
 		}
 		if resp.StatusCode == http.StatusForbidden {
 			return ErrForbidden
+		}
+		if resp.StatusCode == http.StatusNotFound {
+			return ErrNotFound
 		}
 		return fmt.Errorf("unexpected status code: %s", resp.Status)
 	}
@@ -161,8 +179,99 @@ func (tc *testClient) updateAd(userID int64, adID int64, title string, text stri
 	return response, nil
 }
 
-func (tc *testClient) listAds() (adsResponse, error) {
-	req, err := http.NewRequest(http.MethodGet, tc.baseURL+"/api/v1/ads", nil)
+func (tc *testClient) getAdByID(adID int64) (adResponse, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/%d", adID), nil)
+
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) createUser(nickname string, email string) (userResponse, error) {
+	body := map[string]any{
+		"nickname": nickname,
+		"email":    email,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, tc.baseURL+"/api/v1/users", bytes.NewReader(data))
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) updateUser(userID int64, nickname string, email string) (userResponse, error) {
+	body := map[string]any{
+		"nickname": nickname,
+		"email":    email,
+	}
+
+	data, err := json.Marshal(body)
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to marshal: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf(tc.baseURL+"/api/v1/users/%d", userID), bytes.NewReader(data))
+	if err != nil {
+		return userResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	var response userResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return userResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) searchAdByName(title string) (adResponse, error) {
+
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads/search/%s", title), nil)
+
+	if err != nil {
+		return adResponse{}, fmt.Errorf("unable to create request: %w", err)
+	}
+
+	var response adResponse
+	err = tc.getResponse(req, &response)
+	if err != nil {
+		return adResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (tc *testClient) filterAds(options ...app.FilterOption) (adsResponse, error) {
+	filter := app.NewFilter(options...)
+	authorID := filter.AuthorID
+	pubAfter := filter.PublishedAfter.Format(time.RFC3339Nano)
+	pubBefore := filter.PublishedBefore.Format(time.RFC3339Nano)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf(tc.baseURL+"/api/v1/ads?author_id=%d&pub_after=%s&pub_before=%s", authorID, pubAfter, pubBefore), nil)
 	if err != nil {
 		return adsResponse{}, fmt.Errorf("unable to create request: %w", err)
 	}
