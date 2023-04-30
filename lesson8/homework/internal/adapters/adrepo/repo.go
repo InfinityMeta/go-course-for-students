@@ -3,6 +3,7 @@ package adrepo
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -125,7 +126,7 @@ func (rs *RepositoryApp) SearchAdByName(ctx context.Context, adName string) (*ad
 	defer rs.storageAd.mx.RUnlock()
 
 	for _, v := range rs.storageAd.data {
-		if v.Title == adName {
+		if strings.Contains(v.Title, adName) {
 			return v, nil
 		}
 	}
@@ -134,7 +135,7 @@ func (rs *RepositoryApp) SearchAdByName(ctx context.Context, adName string) (*ad
 
 }
 
-func (rs *RepositoryApp) FilterAds(ctx context.Context, filter *app.Filter) []*ads.Ad {
+func (rs *RepositoryApp) FilterAds(ctx context.Context, filter *app.Filter) ([]*ads.Ad, error) {
 	rs.storageAd.mx.RLock()
 	defer rs.storageAd.mx.RUnlock()
 
@@ -156,5 +157,9 @@ func (rs *RepositoryApp) FilterAds(ctx context.Context, filter *app.Filter) []*a
 		res = append(res, v)
 	}
 
-	return res
+	if len(res) == 0 {
+		return res, ErrNotFound
+	}
+
+	return res, nil
 }

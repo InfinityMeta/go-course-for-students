@@ -109,6 +109,15 @@ func TestSearchAdByName(t *testing.T) {
 	assert.Equal(t, response.Data.AuthorID, createdAd.Data.AuthorID)
 	assert.Equal(t, response.Data.Title, createdAd.Data.Title)
 	assert.Equal(t, response.Data.Text, createdAd.Data.Text)
+
+	createdAd, err = client.createAd(0, "red sedan mercedes", "buy red sedan mercedes good condition expensive")
+	assert.NoError(t, err)
+
+	response, err = client.searchAdByName("sedan")
+	assert.NoError(t, err)
+	assert.Equal(t, response.Data.AuthorID, createdAd.Data.AuthorID)
+	assert.Equal(t, response.Data.Title, createdAd.Data.Title)
+	assert.Equal(t, response.Data.Text, createdAd.Data.Text)
 }
 
 func TestFilterAdsOneUser(t *testing.T) {

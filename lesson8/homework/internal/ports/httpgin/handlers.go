@@ -8,8 +8,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/InfinityMeta/validator"
-
 	"homework8/internal/app"
 )
 
@@ -33,14 +31,11 @@ func createAd(a app.App) gin.HandlerFunc {
 				c.JSON(http.StatusNotFound, AdErrorResponse(err))
 				return
 			}
+			if errors.Is(err, app.ErrNotValid) {
+				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+				return
+			}
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-			return
-		}
-
-		err = validator.Validate(ad)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
 			return
 		}
 
@@ -85,13 +80,6 @@ func changeAdStatus(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		err = validator.Validate(ad)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
-			return
-		}
-
 		c.JSON(http.StatusOK, AdSuccessResponse(ad))
 	}
 }
@@ -128,14 +116,13 @@ func updateAd(a app.App) gin.HandlerFunc {
 				c.JSON(http.StatusForbidden, AdErrorResponse(err))
 				return
 			}
+
+			if errors.Is(err, app.ErrNotValid) {
+				c.JSON(http.StatusBadRequest, AdErrorResponse(err))
+				return
+			}
+
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-			return
-		}
-
-		err = validator.Validate(ad)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
 			return
 		}
 
@@ -162,13 +149,6 @@ func getAdByID(a app.App) gin.HandlerFunc {
 				return
 			}
 			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
-			return
-		}
-
-		err = validator.Validate(ad)
-
-		if err != nil {
-			c.JSON(http.StatusBadRequest, AdErrorResponse(err))
 			return
 		}
 
@@ -203,17 +183,15 @@ func filterAds(a app.App) gin.HandlerFunc {
 			return
 		}
 
-		adsList := a.FilterAds(c, app.WithAuthorID(authorID), app.WithPublishedBefore(pubBefore.UTC()), app.WithPublishedAfter(pubAfter.UTC()))
+		adsList, err := a.FilterAds(c, app.WithAuthorID(authorID), app.WithPublishedBefore(pubBefore.UTC()), app.WithPublishedAfter(pubAfter.UTC()))
 
-		for _, ad := range adsList {
-
-			err := validator.Validate(ad)
-
-			if err != nil {
-				c.JSON(http.StatusBadRequest, AdsErrorResponse(err))
+		if err != nil {
+			if errors.Is(err, app.ErrNotFound) {
+				c.JSON(http.StatusNotFound, AdErrorResponse(err))
 				return
 			}
-
+			c.JSON(http.StatusInternalServerError, AdErrorResponse(err))
+			return
 		}
 
 		c.JSON(http.StatusOK, AdsSuccessResponse(adsList))
