@@ -5,6 +5,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/InfinityMeta/validator"
+
 	"homework8/internal/ads"
 	"homework8/internal/users"
 )
@@ -12,6 +14,7 @@ import (
 var (
 	ErrStatusForbidden = errors.New("forbidden")
 	ErrNotFound        = errors.New("not found")
+	ErrNotValid        = errors.New("not valid")
 )
 
 type App interface {
@@ -24,7 +27,7 @@ type App interface {
 	CheckUserExists(context.Context, int64) bool
 	GetAdByID(context.Context, int64) (*ads.Ad, error)
 	SearchAdByName(context.Context, string) (*ads.Ad, error)
-	FilterAds(context.Context, ...FilterOption) []*ads.Ad
+	FilterAds(context.Context, ...FilterOption) ([]*ads.Ad, error)
 }
 
 type Repository interface {
@@ -39,7 +42,7 @@ type Repository interface {
 	LenAd(context.Context) int64
 	LenUser(context.Context) int64
 	SearchAdByName(context.Context, string) (*ads.Ad, error)
-	FilterAds(context.Context, *Filter) []*ads.Ad
+	FilterAds(context.Context, *Filter) ([]*ads.Ad, error)
 }
 
 type AdApp struct {
@@ -57,6 +60,12 @@ func (a *AdApp) CreateAd(ctx context.Context, title string, text string, authorI
 	}
 
 	ad := &ads.Ad{ID: a.repository.LenAd(ctx), Title: title, Text: text, AuthorID: authorId, Published: false, CreationDate: time.Now().UTC(), UpdateDate: time.Time{}}
+
+	err := validator.Validate(ad)
+
+	if err != nil {
+		return &ads.Ad{}, ErrNotValid
+	}
 
 	a.repository.StoreAd(ctx, ad)
 
@@ -103,6 +112,12 @@ func (a *AdApp) UpdateAd(ctx context.Context, adID int64, authorID int64, title 
 	}
 
 	a.repository.UpdateADByID(ctx, adID, title, text)
+
+	err = validator.Validate(ad)
+
+	if err != nil {
+		return &ads.Ad{}, ErrNotValid
+	}
 
 	return ad, nil
 
@@ -168,8 +183,14 @@ func (a *AdApp) SearchAdByName(ctx context.Context, adName string) (*ads.Ad, err
 
 }
 
-func (a *AdApp) FilterAds(ctx context.Context, options ...FilterOption) []*ads.Ad {
+func (a *AdApp) FilterAds(ctx context.Context, options ...FilterOption) ([]*ads.Ad, error) {
 
-	return a.repository.FilterAds(ctx, NewFilter(options...))
+	filteredAds, err := a.repository.FilterAds(ctx, NewFilter(options...))
+
+	if err != nil {
+		return []*ads.Ad{}, ErrNotFound
+	}
+
+	return filteredAds, nil
 
 }
